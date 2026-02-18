@@ -57,4 +57,8 @@ data7<- select(filter(my_data2, if_any(ends_with(!!condition2))),
                Species)
 data7
 
-#here is_any() helper will work like 
+#here is_any() helper will work like or condition if any one is match it 
+#will give result
+
+
+
