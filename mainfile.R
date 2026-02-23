@@ -18,6 +18,8 @@ glio_object
 glio_object[["percent.mt"]] <- PercentageFeatureSet(glio_object, pattern = "^MT-")
 View(glio_object@meta.data)
 glio_object
+
+
 #step-4 Plot the qulaity of the data seeing the mess visually
 raw_plot <- VlnPlot(glio_object, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"))
 ggsave(filename = "raw_plot.png", plot = raw_plot, path = "C:\\Users\\Lenovo\\OneDrive\\Desktop\\NGS-data-analysis\\plots")
@@ -79,3 +81,20 @@ glio_object <- RunUMAP(glio_object, dims = 1:10)
 #use dimplot to visualize it 
 dim_plot <- DimPlot(glio_object, reduction = "umap")
 ggsave(filename = "dimplot.png", plot = dim_plot, path = "C:\\Users\\Lenovo\\OneDrive\\Desktop\\NGS-data-analysis\\plots")
+
+Idents(glio_object) <- "seurat_clusters"
+markers <- FindAllMarkers(glio_object, only.pos = TRUE, min.pct = 0.25, 
+                          logfc.threshold = 0.25)
+
+head(markers, 20)
+markers[15:25, ]
+markers[ , 1:4]
+slice_min(markers, order_by = avg_log2FC)
+slice_max(markers, order_by = avg_log2FC)
+
+#now lests find the genes that are expressed highly from each cluster
+#use top_n() function
+top_2 <- markers %>% group_by(cluster) %>% top_n(n = 2, wt = avg_log2FC)
+View(top_2)
+expressed_plot <- DotPlot(glio_object, features = unique(top_2$gene)) + RotatedAxis()
+ggsave(filename = "expressed_gene.png", plot = expressed_plot, path = "C:\\Users\\Lenovo\\OneDrive\\Desktop\\NGS-data-analysis\\plots")
