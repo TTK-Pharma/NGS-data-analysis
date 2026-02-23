@@ -97,5 +97,5 @@ slice_max(markers, order_by = avg_log2FC)
 #use top_n() function
 top_2 <- markers %>% group_by(cluster) %>% top_n(n = 2, wt = avg_log2FC)
 View(top_2)
-DotPlot(glio_object, features = unique(top_2$gene)) + theme(axis.text.x = element_text(size = 5)) + RotatedAxis()
+expressed_plot <- DotPlot(glio_object, features = unique(top_2$gene)) + theme(axis.text.x = element_text(size = 5)) + RotatedAxis()
 ggsave(filename = "expressed_gene.png", plot = expressed_plot, path = "C:\\Users\\Lenovo\\OneDrive\\Desktop\\NGS-data-analysis\\plots")
