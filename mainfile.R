@@ -35,6 +35,7 @@ norm_data <- glio_object[["RNA"]]$data
 norm_data[5:15, 5:15]
 
 #Find the most varaible gene across the cells with the default value 2000
+
 glio_object <- FindVariableFeatures(glio_object,selection.method = "vst", nfeatures = 2000)
 # to visualize it use 
 variablePlot <- VariableFeaturePlot(glio_object)
