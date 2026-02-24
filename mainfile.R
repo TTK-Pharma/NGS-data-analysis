@@ -2,6 +2,7 @@ library(Seurat)
 library(dplyr)
 library(patchwork)
 library(ggplot2)
+install.packages("Rtools")
 
 # step-1 load the 10xgnomics file
 glio <- Read10X_h5("C:\\Users\\Lenovo\\OneDrive\\Desktop\\NGS data analysis\\data\\Parent_SC3v3_Human_Glioblastoma_raw_feature_bc_matrix.h5")
@@ -29,7 +30,7 @@ glio_object <- subset(glio_object, subset = nFeature_RNA > 300 & nFeature_RNA < 
                         percent.mt < 5)
 glio_object
 
-#normalise the data tomake the gene that is comparable across cell (eliminate technical bias)
+#normalise the data to make the gene that is comparable across cell (eliminate technical bias)
 glio_object <- NormalizeData(glio_object)
 norm_data <- glio_object[["RNA"]]$data
 norm_data[5:15, 5:15]
@@ -83,10 +84,17 @@ glio_object <- RunUMAP(glio_object, dims = 1:10)
 dim_plot <- DimPlot(glio_object, reduction = "umap")
 ggsave(filename = "dimplot.png", plot = dim_plot, path = "C:\\Users\\Lenovo\\OneDrive\\Desktop\\NGS-data-analysis\\plots")
 
+#here we will find the markers acroos clusters based on the expression of the specific gene
+#use presto package t run the wilcox test more efficiently
+#install the devtols package first to install packge from gitub repo
+#install.packages("devtools")
+#library(devtools)
+#devtools::install_github("immunogenomics/presto")
 Idents(glio_object) <- "seurat_clusters"
 markers <- FindAllMarkers(glio_object, only.pos = TRUE, min.pct = 0.25, 
-                          logfc.threshold = 0.25)
+                          logfc.threshold = 0.25, test.use = "wilcox")
 
+#use the following commands to view the markers that are upregulated across clusters
 head(markers, 20)
 markers[15:25, ]
 markers[ , 1:4]
@@ -97,5 +105,6 @@ slice_max(markers, order_by = avg_log2FC)
 #use top_n() function
 top_2 <- markers %>% group_by(cluster) %>% top_n(n = 2, wt = avg_log2FC)
 View(top_2)
+DotPlot(glio_object, features = unique(top_2$gene)) + theme(axis.text.x = element_text(size = 5)) + RotatedAxis()
 expressed_plot <- DotPlot(glio_object, features = unique(top_2$gene)) + theme(axis.text.x = element_text(size = 5)) + RotatedAxis()
 ggsave(filename = "expressed_gene.png", plot = expressed_plot, path = "C:\\Users\\Lenovo\\OneDrive\\Desktop\\NGS-data-analysis\\plots")
