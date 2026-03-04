@@ -2,7 +2,7 @@ library(Seurat)
 library(dplyr)
 library(patchwork)
 library(ggplot2)
-install.packages("Rtools")
+
 
 # step-1 load the 10xgnomics file
 glio <- Read10X_h5("C:\\Users\\Lenovo\\OneDrive\\Desktop\\NGS data analysis\\data\\Parent_SC3v3_Human_Glioblastoma_raw_feature_bc_matrix.h5")
@@ -23,10 +23,12 @@ glio_object
 
 #step-4 Plot the qulaity of the data seeing the mess visually
 raw_plot <- VlnPlot(glio_object, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"))
+VlnPlot(glio_object, features = c("nFeature_RNA", "nCount_RNA"))
 ggsave(filename = "raw_plot.png", plot = raw_plot, path = "C:\\Users\\Lenovo\\OneDrive\\Desktop\\NGS-data-analysis\\plots")
 
 #step-5 Apply some parameters to clean the data with false positives 
-glio_object <- subset(glio_object, subset = nFeature_RNA > 300 & nFeature_RNA < 7500 & 
+glio_object <- subset(glio_object, subset = nFeature_RNA > 300 & nFeature_RNA < 6000 &
+                        nCount_RNA > 1000 & nCount_RNA < 40000 &
                         percent.mt < 5)
 glio_object
 
@@ -47,6 +49,7 @@ ggsave(filename = "variableplot.png", plot = variablePlot, path = "C:\\Users\\Le
 #scaling is to normalize the difference between genes (highly expressed genes will
 #have high no of variations the PCA will onlly care about higher valuse nor for biology)
 #only access the genes so create a variable with only gene name
+
 all_genes <- rownames(glio_object)
 glio_object <- ScaleData(glio_object, features = all_genes)
 dim(glio_object[["RNA"]]$scale.data)
@@ -85,14 +88,12 @@ dim_plot <- DimPlot(glio_object, reduction = "umap")
 ggsave(filename = "dimplot.png", plot = dim_plot, path = "C:\\Users\\Lenovo\\OneDrive\\Desktop\\NGS-data-analysis\\plots")
 
 #here we will find the markers acroos clusters based on the expression of the specific gene
-#use presto package t run the wilcox test more efficiently
-#install the devtols package first to install packge from gitub repo
-#install.packages("devtools")
-#library(devtools)
-#devtools::install_github("immunogenomics/presto")
+
+
 Idents(glio_object) <- "seurat_clusters"
 markers <- FindAllMarkers(glio_object, only.pos = TRUE, min.pct = 0.25, 
                           logfc.threshold = 0.25, test.use = "wilcox")
+write.csv(markers, file = "markersByclusters.csv")
 
 #use the following commands to view the markers that are upregulated across clusters
 head(markers, 20)
@@ -101,10 +102,55 @@ markers[ , 1:4]
 slice_min(markers, order_by = avg_log2FC)
 slice_max(markers, order_by = avg_log2FC)
 
-#now lests find the genes that are expressed highly from each cluster
+markers_List <- read.csv("C:\\Users\\Lenovo\\OneDrive\\Desktop\\NGS-data-analysis\\markersByclusters.csv")
+head(markers_List)
+markers_final <- as_tibble(markers_List, .rows = NULL)
+View(markers_final)
+#now lests find the genes that are expressed highNULL#now lests find the genes that are expressed highly from each cluster
 #use top_n() function
-top_2 <- markers %>% group_by(cluster) %>% top_n(n = 2, wt = avg_log2FC)
-View(top_2)
-DotPlot(glio_object, features = unique(top_2$gene)) + theme(axis.text.x = element_text(size = 5)) + RotatedAxis()
-expressed_plot <- DotPlot(glio_object, features = unique(top_2$gene)) + theme(axis.text.x = element_text(size = 5)) + RotatedAxis()
-ggsave(filename = "expressed_gene.png", plot = expressed_plot, path = "C:\\Users\\Lenovo\\OneDrive\\Desktop\\NGS-data-analysis\\plots")
+#top_5 <- markers_List %>% group_by(cluster) %>% top_n(n = 5, wt = avg_log2FC)
+top_5 <- markers_List %>% filter(avg_log2FC > 1 & p_val_adj < 0.05) %>%
+                  group_by(cluster) %>% slice_max(order_by = avg_log2FC, n = 5)
+head(top_5)
+DotPlot(glio_object, features = unique(top_5$gene)) + theme(axis.text.x = element_text(size = 5)) + RotatedAxis()
+expressed_plot <- DotPlot(glio_object, features = unique(top_5$gene)) + theme_bw(ink = "white") + theme(axis.text.x = element_text(size = 5)) + RotatedAxis()
+ggsave(filename = "expressed_gene5.png", plot = expressed_plot, path = "C:\\Users\\Lenovo\\OneDrive\\Desktop\\NGS-data-analysis\\plots")
+
+#now come to the part of cluster annotations
+top_5 %>% filter(cluster == 12)
+
+VlnPlot(glio_object, features = c("nFeature_RNA", "nCount_RNA"), group.by="seurat_clusters")
+#now visualize it in feature plot for confirmation
+FeaturePlot(glio_object, features = c(
+  "CX3CR1",
+  "TMEM119",
+  "P2RY12",
+  "CD14"
+))
+
+VlnPlot(glio_object, features = c("MBP","PLP1","OLIG2"), group.by = "seurat_clusters")
+
+#Assign the cluster types to specific clusters
+levels(Idents(glio_object))
+#Rename it 
+glio_object <- RenameIdents(glio_object, 
+                            "0" = "OPC-like malignant cells",
+                            "1" = "mesenchymal-like malignant cells",
+                            "2" = "Peripheral macrophages", 
+                            "3" = "Hypoxia-associated malignant Cells", 
+                            "4" = "Tumor-Associated Macrophages",
+                            "5" = "Mature oligodendrocytes",
+                            "6" = "OPC-like malignant cells",
+                            "7" = "Tumor-associated macrophages",
+                            "8" = "Neuronal progenitor-like cells",
+                            "9" = "Microglia",
+                            "10" = "Proliferating tumor cells", 
+                            "11" = "T cells",
+                            "12" = "Cancer-associated fibroblasts")
+DimPlot(glio_object, label = TRUE, repel = TRUE)
+#save this in a separate column 
+glio_object$celltypes <- Idents(glio_object)
+head(glio_object@meta.data)
+Annotated<-DimPlot(glio_object, group.by = "celltypes", label = TRUE)
+ggsave(filename = "Annotated-UMAp.png", plot = Annotated, path = "C:\\Users\\Lenovo\\OneDrive\\Desktop\\NGS-data-analysis\\plots",
+       height = 8, width = 19)
