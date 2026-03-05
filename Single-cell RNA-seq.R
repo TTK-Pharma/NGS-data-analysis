@@ -5,7 +5,7 @@ library(ggplot2)
 
 
 # step-1 load the 10xgnomics file
-glio <- Read10X_h5("C:\\Users\\Lenovo\\OneDrive\\Desktop\\NGS data analysis\\data\\Parent_SC3v3_Human_Glioblastoma_raw_feature_bc_matrix.h5")
+glio <- Read10X_h5("data\\Parent_SC3v3_Human_Glioblastoma_raw_feature_bc_matrix.h5")
 
 #step-2create a seurat object to create a centralized storage
 glio_object <- CreateSeuratObject(counts = glio, min.cells = 3, min.features = 200)
@@ -24,7 +24,7 @@ glio_object
 #step-4 Plot the qulaity of the data seeing the mess visually
 raw_plot <- VlnPlot(glio_object, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"))
 VlnPlot(glio_object, features = c("nFeature_RNA", "nCount_RNA"))
-ggsave(filename = "raw_plot.png", plot = raw_plot, path = "C:\\Users\\Lenovo\\OneDrive\\Desktop\\NGS-data-analysis\\plots")
+ggsave(filename = "raw_plot.png", plot = raw_plot, path = "plots")
 
 #step-5 Apply some parameters to clean the data with false positives 
 glio_object <- subset(glio_object, subset = nFeature_RNA > 300 & nFeature_RNA < 6000 &
@@ -42,7 +42,7 @@ norm_data[5:15, 5:15]
 glio_object <- FindVariableFeatures(glio_object,selection.method = "vst", nfeatures = 2000)
 # to visualize it use 
 variablePlot <- VariableFeaturePlot(glio_object)
-ggsave(filename = "variableplot.png", plot = variablePlot, path = "C:\\Users\\Lenovo\\OneDrive\\Desktop\\NGS-data-analysis\\plots")
+ggsave(filename = "variableplot.png", plot = variablePlot, path = "plots")
 
 #before performing the PCA analysis there is a main stp called scaling
 #where the normalization is done for difference between cells (sequencing depth)
@@ -62,7 +62,7 @@ length(features_present)
 
 glio_object <- RunPCA(glio_object, features = features_present)
 PCA_plot<-ElbowPlot(glio_object)
-ggsave(filename = "elbowplot.png", plot = PCA_plot, path = "C:\\Users\\Lenovo\\OneDrive\\Desktop\\NGS-data-analysis\\plots")
+ggsave(filename = "elbowplot.png", plot = PCA_plot, path = "NGS-data-analysis\\plots")
 
 #now find the neighors from the PCA data like if cell A and cell B will get many of the
 #genes similar then they will have strong connection
@@ -85,7 +85,7 @@ table(Idents(glio_object))
 glio_object <- RunUMAP(glio_object, dims = 1:10)
 #use dimplot to visualize it 
 dim_plot <- DimPlot(glio_object, reduction = "umap")
-ggsave(filename = "dimplot.png", plot = dim_plot, path = "C:\\Users\\Lenovo\\OneDrive\\Desktop\\NGS-data-analysis\\plots")
+ggsave(filename = "dimplot.png", plot = dim_plot, path = "NGS-data-analysis\\plots")
 
 #here we will find the markers acroos clusters based on the expression of the specific gene
 
@@ -102,7 +102,7 @@ markers[ , 1:4]
 slice_min(markers, order_by = avg_log2FC)
 slice_max(markers, order_by = avg_log2FC)
 
-markers_List <- read.csv("C:\\Users\\Lenovo\\OneDrive\\Desktop\\NGS-data-analysis\\markersByclusters.csv")
+markers_List <- read.csv("NGS-data-analysis\\markersByclusters.csv")
 head(markers_List)
 markers_final <- as_tibble(markers_List, .rows = NULL)
 View(markers_final)
@@ -114,7 +114,7 @@ top_5 <- markers_List %>% filter(avg_log2FC > 1 & p_val_adj < 0.05) %>%
 head(top_5)
 DotPlot(glio_object, features = unique(top_5$gene)) + theme(axis.text.x = element_text(size = 5)) + RotatedAxis()
 expressed_plot <- DotPlot(glio_object, features = unique(top_5$gene)) + theme_bw(ink = "white") + theme(axis.text.x = element_text(size = 5)) + RotatedAxis()
-ggsave(filename = "expressed_gene5.png", plot = expressed_plot, path = "C:\\Users\\Lenovo\\OneDrive\\Desktop\\NGS-data-analysis\\plots")
+ggsave(filename = "expressed_gene5.png", plot = expressed_plot, path = "NGS-data-analysis\\plots")
 
 #now come to the part of cluster annotations
 top_5 %>% filter(cluster == 12)
@@ -152,5 +152,5 @@ DimPlot(glio_object, label = TRUE, repel = TRUE)
 glio_object$celltypes <- Idents(glio_object)
 head(glio_object@meta.data)
 Annotated<-DimPlot(glio_object, group.by = "celltypes", label = TRUE)
-ggsave(filename = "Annotated-UMAp.png", plot = Annotated, path = "C:\\Users\\Lenovo\\OneDrive\\Desktop\\NGS-data-analysis\\plots",
+ggsave(filename = "Annotated-UMAp.png", plot = Annotated, path = "NGS-data-analysis\\plots",
        height = 8, width = 19)
