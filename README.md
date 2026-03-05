@@ -64,15 +64,8 @@ The analysis was performed using the following R packages:
 
 ## Repository Structure
 
-plots/
-├── raw_plot.png
-├── variableplot.png
-├── elbowplot.png
-├── dimplot.png
-├── expressed_gene5.png
-└── Annotated-UMAP.png
-
-mainfile.R
+plots
+Single-cellRNA-seq.R
 markersByclusters.csv
 README.md
 
