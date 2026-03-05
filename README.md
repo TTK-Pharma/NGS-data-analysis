@@ -72,7 +72,7 @@ plots/
 ├── expressed_gene5.png
 └── Annotated-UMAP.png
 
-## Source -  mainfile.R
+mainfile.R
 markersByclusters.csv
 README.md
 
